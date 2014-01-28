@@ -2200,7 +2200,6 @@ method compile(vl, of, mn, rm, bt) {
         cmd := ""
 
         if(buildinfo.includepath == "") then {
-            print("buildinfo includepath is undefined");
             cmd := "gcc -std=c99 -g -I\"{util.gracelibPath}\" -I\"{sys.execPath}/../include\" -I\"{sys.execPath}\" -o \"{modname}.gcn\" -c \"{modname}.c\"" 
         }else{
             cmd := "gcc -std=c99 -g -I\"{util.gracelibPath}\" -I\"{sys.execPath}/../include\" -I\"{sys.execPath}\" -I\"{buildinfo.includepath}\" -o \"{modname}.gcn\" -c \"{modname}.c\""
