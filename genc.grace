@@ -1797,8 +1797,6 @@ method addTransitiveImports(filepath, epath, line) {
 
 method checkimport(nm, line) {
     var exists := false
-    var ext := false
-    var cmd
     def argv = sys.argv
     if (staticmodules.contains(nm)) then {
         return true
@@ -1850,6 +1848,7 @@ method checkimport(nm, line) {
             // Check for the .grace file first so that we know that
             // when we look for .gcn the corresponding .grace won't exist.
             exists := true
+            var cmd
             var slash := false
             for(argv.first) do {letter ->
                 if(letter == "/") then {
