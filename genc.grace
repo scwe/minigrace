@@ -1877,7 +1877,7 @@ method checkimport(nm, line, isDialect) {
             if (util.importDynamic) then {
                 cmd := cmd ++ " --import-dynamic --dynamic-module"
             }
-            if (util.recurse) then {
+            if (util.recurse || isDialect) then {
                 if(location != "") then {
                     cmd := "cd {location} && "++cmd
                 }
