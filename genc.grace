@@ -1753,7 +1753,8 @@ method compilenode(o) {
 }
 method spawnSubprocess(id, cmd, data) {
     if (subprocesses.size < util.jobs) then {
-        return subprocesses.push([id, io.spawn("bash", "-c", cmd), data])
+        subprocesses.push([id, io.spawn("bash", "-c", cmd), data])
+        return subprocesses[subprocesses.size][2] 
     }
     var alive := 0
     var firstAlive := false
@@ -1770,6 +1771,7 @@ method spawnSubprocess(id, cmd, data) {
         firstAlive[2].wait
     }
     subprocesses.push([id, io.spawn("bash", "-c", cmd), data])
+    return subprocesses.at(subprocesses.size)[2]
 }
 method parseGCT(path, filepath) {
     xmodule.parseGCT(path,
@@ -1783,7 +1785,7 @@ method addTransitiveImports(filepath, epath, line) {
                 errormessages.syntaxError("Cyclic import detected: '{m}' is imported "
                     ++ "by '{epath}', which is imported by '{m}' (and so on).")atLine(line)
             }
-            checkimport(m, line)
+            checkimport(m, line, false)
         }
     }
     if (data.contains("path")) then {
@@ -1795,7 +1797,7 @@ method addTransitiveImports(filepath, epath, line) {
     }
 }
 
-method checkimport(nm, line) {
+method checkimport(nm, line, isDialect) {
     var exists := false
     def argv = sys.argv
     if (staticmodules.contains(nm)) then {
@@ -1869,7 +1871,7 @@ method checkimport(nm, line) {
                 cmd := cmd ++ " --vtag " ++ util.vtag
             }
             cmd := cmd ++ " --noexec --no-recurse -XNoMain"
-            if (util.dynamicModule) then {
+            if (util.dynamicModule || isDialect) then {
                 cmd := cmd ++ " --dynamic-module"
             }
             if (util.importDynamic) then {
@@ -1879,7 +1881,10 @@ method checkimport(nm, line) {
                 if(location != "") then {
                     cmd := "cd {location} && "++cmd
                 }
-                spawnSubprocess(nm, cmd, [nm ++ ".gcn", nm, line])
+                var process := spawnSubprocess(nm, cmd, [nm ++ ".gcn", nm, line])
+                if(isDialect) then {
+                    process.wait  //we must wait for the gso to be built before we try to run dlmodulesle -> find_gso
+                }
             }
             if (!util.importDynamic) then {
                 linkfiles.push("{location}{nm}.gcn")
@@ -1917,12 +1922,12 @@ method processImports(values') {
         for (values') do { v ->
             if (v.kind == "import") then {
                 var nm := v.path
-                checkimport(nm, v.line)
+                checkimport(nm, v.line, false)
             }
             if (v.kind == "dialect") then {
                 var nm := v.value
-                checkimport(nm, v.line)
-                log_verbose("loading dialect for checkers.")
+                checkimport(nm, v.line, true)
+                log_verbose("loading dialect for checkers. {nm} So we successfully completed checkimport for this file")
                 def CheckerFailure = Exception.refine "CheckerFailure"
                 catch {
                     def dobj = mirrors.loadDynamicModule(nm)
