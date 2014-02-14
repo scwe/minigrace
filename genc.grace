@@ -1885,8 +1885,9 @@ method checkimport(nm, line, isDialect) {
                 if(isDialect) then {
                     process.wait  //we must wait for the gso to be built before we try to run dlmodulesle -> find_gso
                 }
+                //addTransitiveImports("{location}{nm}.gso", nm, line)
             }
-            if (!util.importDynamic) then {
+            if (!util.importDynamic && !isDialect) then {
                 linkfiles.push("{location}{nm}.gcn")
                 staticmodules.add(nm)
             }
